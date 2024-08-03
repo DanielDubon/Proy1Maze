@@ -1,19 +1,24 @@
 use minifb::{Key, Window, WindowOptions};
 use std::time::Duration;
+use nalgebra_glm::{Vec2};
 use std::f32::consts::PI;
 
 mod framebuffer;
 use framebuffer::Framebuffer;
 mod maze;
 use maze::load_maze;
+mod player;
+use player::Player;
 
 fn cell_to_color(cell: char) -> u32 {
+    let default_color = 0x0000000;
+
     match cell {
         '+' => 0xFF00FF,
         '-' => 0xDD11DD,
         '|' => 0xCC11CC,
         'g' => 0xFF0000,
-        _ => 0x000000,
+        _ => default_color,
     }
 }
 
@@ -34,7 +39,7 @@ fn draw_cell(framebuffer: &mut Framebuffer, xo: usize, yo: usize, block_size:usi
 }
 
 
-fn render2d(framebuffer: &mut Framebuffer) {
+fn render2d(framebuffer: &mut Framebuffer, player: &Player) {
     let maze = load_maze("./maze.txt");
     let block_size = 100;
 
@@ -44,6 +49,9 @@ fn render2d(framebuffer: &mut Framebuffer) {
 
         }
     }
+    framebuffer.set_current_color(0xFFFFFF);
+    framebuffer.point(player.pos.x as usize, player.pos.y as usize);
+
 }
 
 
@@ -70,6 +78,11 @@ fn main() {
     window.update();
 
     framebuffer.set_background_color(0x333355);
+
+    let player = Player {
+    pos: Vec2::new(150.0, 150.0),
+    };
+
     framebuffer.clear();
     // initialize values
    
@@ -81,7 +94,7 @@ fn main() {
             break;
         }
 
-        render2d(&mut framebuffer);
+        render2d(&mut framebuffer, &player);
         // Update the window with the framebuffer contents
 window
 .update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height)
