@@ -9,7 +9,7 @@ pub struct Player{
 }
 
 pub fn process_events(window: &Window, player: &mut Player) {
-    const MOVE_SPEED: f32 = 4.0;
+    const MOVE_SPEED: f32 = 6.0;
     const ROTATION_SPEED: f32 = 3.14 / 40.0;
 
     if window.is_key_down(Key::Left) {
