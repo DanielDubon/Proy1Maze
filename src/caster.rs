@@ -47,7 +47,7 @@ pub fn cast_ray(
             return Intersect {
                 distance: d,
                 impact: maze[j][i],
-                tx: maxhit,
+                tx: maxhit * 128 / block_size,
             }
         }
 
