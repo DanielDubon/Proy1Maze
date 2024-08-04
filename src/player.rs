@@ -1,6 +1,6 @@
 use minifb::{Window,Key};
 use nalgebra_glm::{Vec2};
-
+use crate::audio::AudioPlayer;
 
 pub struct Player {
     pub pos: Vec2,
@@ -28,54 +28,46 @@ impl Player {
     }
 }
 
-pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize) {
+pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, audio_player: &AudioPlayer) {
     const MOVE_SPEED: f32 = 6.0;
     const ROTATION_SPEED: f32 = 3.14 / 40.0;
+
+    let mut moved = false;
 
     // Obtener la posición del mouse
     if let Some((mouse_x, _mouse_y)) = window.get_mouse_pos(minifb::MouseMode::Clamp) {
         let mouse_x = mouse_x as f32;
-
-        // Calcular delta
         let delta_x = mouse_x - player.previous_mouse_pos.x;
-
-        // Ajustar la rotación basada en la posición del mouse
-        if delta_x > 0.0 {
-            player.a += ROTATION_SPEED; // Rotar a la derecha
-        } else if delta_x < 0.0 {
-            player.a -= ROTATION_SPEED; // Rotar a la izquierda
+        if delta_x.abs() > 0.1 {  // Consider a significant movement
+            player.a += delta_x.signum() * ROTATION_SPEED;
         }
-
-        // Actualizar la posición anterior del mouse
         player.previous_mouse_pos.x = mouse_x;
     }
 
-    // Mover al jugador basado en la velocidad
-    player.pos.x += player.velocity.x;
-    player.pos.y += player.velocity.y;
+    let mut new_pos = player.pos;
 
-    // Ajustar la posición y rotación del jugador basada en las teclas de dirección
     if window.is_key_down(Key::A) {
         player.a -= ROTATION_SPEED;
     }
     if window.is_key_down(Key::D) {
         player.a += ROTATION_SPEED;
     }
-
-    let mut new_pos = player.pos;
-
     if window.is_key_down(Key::W) {
         new_pos.x += MOVE_SPEED * player.a.cos();
         new_pos.y += MOVE_SPEED * player.a.sin();
+        moved = true;
     }
-
     if window.is_key_down(Key::S) {
         new_pos.x -= MOVE_SPEED * player.a.cos();
         new_pos.y -= MOVE_SPEED * player.a.sin();
+        moved = true;
     }
 
     // Verificar si el jugador puede moverse a la nueva posición
-    if player.can_move_to(new_pos, maze, block_size) {
-        player.pos = new_pos;
+    if moved && player.can_move_to(new_pos, maze, block_size) {
+        if player.pos != new_pos { // Asegurarse de que hay un movimiento real
+            player.pos = new_pos;
+            audio_player.play_step_sound(); // Reproducir el sonido de pasos solo si se ha movido
+        }
     }
 }

@@ -5,7 +5,7 @@ use std::f32::consts::PI;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
 use std::time::{Instant};
-use rusttype::Scale;
+use rusttype::{Scale, Font};
 
 mod framebuffer;
 use framebuffer::{Framebuffer};
@@ -213,10 +213,20 @@ fn render_enemy(framebuffer: &mut Framebuffer, player: &Player, pos: &Vec2, z_bu
     }
   }
 
+
+
+
 fn main() {
 
-    let audio_player = AudioPlayer::new("assets/music.mp3");
-    audio_player.play();
+    
+   
+
+
+    
+    let audio_player = AudioPlayer::new("assets/music.mp3", "assets/steps.mp3");
+
+    
+    
 
     let window_width = 1200;
     let window_height = 720;
@@ -229,6 +239,50 @@ fn main() {
    
 
     let mut framebuffer = Framebuffer::new(framebuffer_width, framebuffer_height);
+
+
+    let mut welcome_window = Window::new(
+        "Bienvenido - Presiona Enter para jugar",
+        window_width,
+        window_height,
+        WindowOptions::default(),
+    ).unwrap();
+
+    let mut welcome_buffer = vec![0; window_width * window_height];
+
+    while welcome_window.is_open() && !welcome_window.is_key_down(Key::Enter) {
+        let frame_start_time = Instant::now();
+        
+        // Dibujar un color de fondo
+        for i in 0..welcome_buffer.len() {
+            welcome_buffer[i] = 0x000000; // Negro
+        }
+    
+        // Dibujar texto en el buffer de bienvenida
+        let scale = Scale::uniform(32.0);
+        let text = "Bienvenido, presiona Enter para jugar";
+        framebuffer.clear();
+        framebuffer.drawtext(&text, 10, 10, scale, 0xFFFFFF); // Asegurarse que el color es 0xFFFFFF para blanco
+
+        
+    
+        // Actualizar el contenido de `welcome_buffer`
+        welcome_window.update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height).unwrap();
+    
+        // Dormir un poco para evitar consumir demasiada CPU
+        let frame_end_time = Instant::now();
+        let frame_duration_actual = frame_end_time.duration_since(frame_start_time);
+        if frame_duration_actual < frame_duration {
+            let sleep_duration = frame_duration - frame_duration_actual;
+            if sleep_duration > Duration::from_millis(0) {
+                std::thread::sleep(sleep_duration);
+            }
+        }
+    }
+    
+
+    // Cerrar la ventana de bienvenida y proceder a la ventana principal
+    drop(welcome_window);
 
     let mut window = Window::new(
         "Rust Graphics - Maze Example",
@@ -271,9 +325,9 @@ fn main() {
         if window.is_key_down(Key::M){
             mode = if mode == "2D" {"3D"} else {"2D"} 
         }
-
-
-        process_events(&window, &mut player, &maze, block_size); 
+        
+        
+        process_events(&window, &mut player, &maze, block_size, &audio_player); 
 
         framebuffer.clear();
         if mode == "2D"{
