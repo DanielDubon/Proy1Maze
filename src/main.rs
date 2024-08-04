@@ -13,6 +13,8 @@ mod maze;
 use maze::load_maze;
 mod player;
 use player::{Player, process_events};
+mod audio;
+use audio::AudioPlayer;
 
 mod caster;
 use caster::{cast_ray};
@@ -212,6 +214,10 @@ fn render_enemy(framebuffer: &mut Framebuffer, player: &Player, pos: &Vec2, z_bu
   }
 
 fn main() {
+
+    let audio_player = AudioPlayer::new("assets/music.mp3");
+    audio_player.play();
+
     let window_width = 1200;
     let window_height = 720;
 
