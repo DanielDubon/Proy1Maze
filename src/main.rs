@@ -15,7 +15,7 @@ mod player;
 use player::{Player, process_events};
 
 mod caster;
-use caster::{cast_ray, Intersect};
+use caster::{cast_ray};
 
 mod texture;
 use texture::Texture;
@@ -74,7 +74,7 @@ fn render3d(framebuffer: &mut Framebuffer, player: &Player) {
 
     let num_rays = framebuffer.width;
     for i in 0..num_rays {
-        let current_ray = (i as f32 / num_rays as f32);
+        let current_ray = i as f32 / num_rays as f32;
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
         let Intersect = cast_ray(framebuffer, &maze, player, a, block_size, false);
         
@@ -114,23 +114,52 @@ fn render2d(framebuffer: &mut Framebuffer, player: &Player) {
 
     let num_rays = 150;
     for i in 0..num_rays {
-        let current_ray = (i as f32 / num_rays as f32);
+        let current_ray = i as f32 / num_rays as f32;
         let a = player.a - (player.fov / 2.0) + (player.fov * current_ray);
         cast_ray(framebuffer, &maze, player, a, block_size, true);   
     }    
 }
 
+fn render_minimap(framebuffer: &mut Framebuffer, maze: &[Vec<char>], block_size: usize, player: &Player) {
+    let minimap_size = 200; // Size of the minimap
+    let minimap_x = 10; // X position of the minimap
+    let minimap_y = 10; // Y position of the minimap
+
+    // Draw minimap background
+    for x in minimap_x..minimap_x + minimap_size+70 {
+        for y in minimap_y..minimap_y + minimap_size {
+            framebuffer.set_current_color(0x222222); // Dark background for the minimap
+            framebuffer.point(x, y);
+        }
+    }
+
+    // Draw maze on the minimap
+    let scale = minimap_size as f32 / (maze.len() as f32 * block_size as f32);
+    for row in 0..maze.len() {
+        for col in 0..maze[row].len() {
+            let cell_x = (col as f32 * block_size as f32 * scale) as usize;
+            let cell_y = (row as f32 * block_size as f32 * scale) as usize;
+            let mini_block_size = (block_size as f32 * scale) as usize;
+            draw_cell(framebuffer, minimap_x + cell_x, minimap_y + cell_y, mini_block_size, maze[row][col]);
+        }
+    }
+
+    // Draw player position on the minimap
+    framebuffer.set_current_color(0xFF0000); // Red color for the player
+    let player_x = (player.pos.x as f32 * scale) as usize;
+    let player_y = (player.pos.y as f32 * scale) as usize;
+    framebuffer.point(minimap_x + player_x, minimap_y + player_y);
+}
 
 fn main() {
-    let window_width = 1300;
-    let window_height = 900;
+    let window_width = 1200;
+    let window_height = 720;
 
-    let framebuffer_width = 1300;
-    let framebuffer_height = 900;
+    let framebuffer_width = 1200;
+    let framebuffer_height = 720;
   
     let frame_duration = Duration::from_secs_f64(0.015);
 
-    let frame_delay = Duration::from_millis(0);
    
 
     let mut framebuffer = Framebuffer::new(framebuffer_width, framebuffer_height);
@@ -186,7 +215,7 @@ fn main() {
         }else{
             render3d(&mut framebuffer, &player);
         }
-
+        render_minimap(&mut framebuffer, &maze, block_size, &player);
 
         frame_count += 1;
         let current_time = Instant::now();
