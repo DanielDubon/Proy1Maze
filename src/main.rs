@@ -33,7 +33,7 @@ fn cell_to_texture_color(cell: char, tx: u32, ty: u32) -> u32 {
         '+' => WALL2.get_pixel_color(tx, ty),
         '-' => WALL1.get_pixel_color(tx, ty),
         '|' => WALL2.get_pixel_color(tx, ty),
-        'g' => WALL1.get_pixel_color(tx, ty),
+        'g' => 0x008000,
         _ => default_color,
     }
 }
@@ -220,7 +220,7 @@ fn main() {
 
     
    
-
+    
 
     
     let audio_player = AudioPlayer::new("assets/music.mp3", "assets/steps.mp3");
@@ -316,6 +316,17 @@ fn main() {
     let mut frame_count = 0;
     let mut fps_text = String::new();
 
+
+    let mut goal_position = Vec2::new(0.0, 0.0);
+    for (row_idx, row) in maze.iter().enumerate() {
+        for (col_idx, &cell) in row.iter().enumerate() {
+            if cell == 'g' {
+                goal_position = Vec2::new(col_idx as f32 * block_size as f32, row_idx as f32 * block_size as f32);
+                break;
+            }
+        }
+    }
+
     while window.is_open() {
         let frame_start_time = Instant::now();
         // listen to inputs
@@ -325,7 +336,48 @@ fn main() {
         if window.is_key_down(Key::M){
             mode = if mode == "2D" {"3D"} else {"2D"} 
         }
+        if (player.pos - goal_position).norm() < block_size as f32 {
+            println!("Has llegado a la meta. ¡Juego terminado!");
+
+
+
+            let mut success_window = Window::new(
+                "Éxito",
+                window_width,
+                window_height,
+                WindowOptions::default(),
+            ).unwrap();
+
+            let mut success_buffer = vec![0; (window_width) * (window_height)];
+
+
+            while success_window.is_open() {
+                // Dibujar fondo negro
+
+                if success_window.is_key_down(Key::Escape) {
+                    break;
+                }
+
+                for i in 0..success_buffer.len() {
+                    success_buffer[i] = 0x000000; // Negro
+                }
+
+                
+    
+                // Dibujar texto de éxito
+                let scale = Scale::uniform(32.0);
+                let text = "¡PASASTE! ¡FELICIDADES! Presiona ESC para salir";
+                framebuffer.clear();
+                framebuffer.drawtext(&text, 10, 10, scale, 0xFFFFFF); // Asegurarse que el color es 0xFFFFFF para blanco
+    
+                // Actualizar la ventana de éxito con el contenido del framebuffer
+                success_window.update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height).unwrap();
+            }
+            break;
+
         
+            
+        }
         
         process_events(&window, &mut player, &maze, block_size, &audio_player); 
 
