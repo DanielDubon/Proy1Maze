@@ -4,9 +4,11 @@ use nalgebra_glm::{Vec2};
 use std::f32::consts::PI;
 use once_cell::sync::Lazy;
 use std::sync::Arc;
+use std::time::{Instant};
+use rusttype::Scale;
 
 mod framebuffer;
-use framebuffer::Framebuffer;
+use framebuffer::{Framebuffer};
 mod maze;
 use maze::load_maze;
 mod player;
@@ -125,8 +127,11 @@ fn main() {
 
     let framebuffer_width = 1300;
     let framebuffer_height = 900;
+  
+    let frame_duration = Duration::from_secs_f64(0.015);
 
     let frame_delay = Duration::from_millis(0);
+   
 
     let mut framebuffer = Framebuffer::new(framebuffer_width, framebuffer_height);
 
@@ -147,14 +152,23 @@ fn main() {
     pos: Vec2::new(150.0, 150.0),
     a: PI/3.0,
     fov: PI/3.0,
+    velocity: Vec2::new(0.0, 0.0),
+    previous_mouse_pos: Vec2::new(0.0, 0.0),
+
     };
 
     let mut mode = "3D";
     // initialize values
-   
 
+    let maze = load_maze("./maze.txt");
+    let block_size = 100;
+
+    let mut last_time = Instant::now();
+    let mut frame_count = 0;
+    let mut fps_text = String::new();
 
     while window.is_open() {
+        let frame_start_time = Instant::now();
         // listen to inputs
         if window.is_key_down(Key::Escape) {
             break;
@@ -162,7 +176,9 @@ fn main() {
         if window.is_key_down(Key::M){
             mode = if mode == "2D" {"3D"} else {"2D"} 
         }
-        process_events(&window, &mut player); 
+
+
+        process_events(&window, &mut player, &maze, block_size); 
 
         framebuffer.clear();
         if mode == "2D"{
@@ -170,12 +186,35 @@ fn main() {
         }else{
             render3d(&mut framebuffer, &player);
         }
+
+
+        frame_count += 1;
+        let current_time = Instant::now();
+        let elapsed = current_time.duration_since(last_time);
+
+
+        if elapsed >= Duration::from_secs(1) {
+            let fps = frame_count as f64 / elapsed.as_secs_f64();
+            fps_text = format!("FPS: {:.0}", fps);
+            last_time = current_time;
+            frame_count = 0;
+        }
+
+        framebuffer.drawtext(&fps_text, 10, 10, Scale::uniform(32.0), 0xFFFFFF);
+
         // Update the window with the framebuffer contents
 window
 .update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height)
 .unwrap();
 
-std::thread::sleep(frame_delay);
+let frame_end_time = Instant::now();
+let frame_duration_actual = frame_end_time.duration_since(frame_start_time);
+if frame_duration_actual < frame_duration {
+    let sleep_duration = frame_duration - frame_duration_actual;
+    if sleep_duration > Duration::from_millis(0) {
+        std::thread::sleep(sleep_duration);
 
+}
     }
+}
 }

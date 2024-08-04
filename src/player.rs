@@ -2,31 +2,80 @@ use minifb::{Window,Key};
 use nalgebra_glm::{Vec2};
 
 
-pub struct Player{
+pub struct Player {
     pub pos: Vec2,
     pub a: f32,
     pub fov: f32,
+    pub velocity: Vec2,
+    pub previous_mouse_pos: Vec2, 
 }
 
-pub fn process_events(window: &Window, player: &mut Player) {
+impl Player {
+    pub fn new(pos: Vec2, a: f32, fov: f32) -> Self {
+        Self { pos, a, fov ,  velocity: Vec2::new(0.0, 0.0), previous_mouse_pos: Vec2::new(0.0, 0.0),}
+    }
+
+    pub fn can_move_to(&self, new_pos: Vec2, maze: &[Vec<char>], block_size: usize) -> bool {
+        let row = (new_pos.y / block_size as f32).floor() as usize;
+        let col = (new_pos.x / block_size as f32).floor() as usize;
+
+        if row < maze.len() && col < maze[0].len() {
+            let cell = maze[row][col];
+            return cell == ' ';
+        }
+
+        false
+    }
+}
+
+pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize) {
     const MOVE_SPEED: f32 = 6.0;
     const ROTATION_SPEED: f32 = 3.14 / 40.0;
 
-    if window.is_key_down(Key::Left) {
+    // Obtener la posición del mouse
+    if let Some((mouse_x, _mouse_y)) = window.get_mouse_pos(minifb::MouseMode::Clamp) {
+        let mouse_x = mouse_x as f32;
+
+        // Calcular delta
+        let delta_x = mouse_x - player.previous_mouse_pos.x;
+
+        // Ajustar la rotación basada en la posición del mouse
+        if delta_x > 0.0 {
+            player.a += ROTATION_SPEED; // Rotar a la derecha
+        } else if delta_x < 0.0 {
+            player.a -= ROTATION_SPEED; // Rotar a la izquierda
+        }
+
+        // Actualizar la posición anterior del mouse
+        player.previous_mouse_pos.x = mouse_x;
+    }
+
+    // Mover al jugador basado en la velocidad
+    player.pos.x += player.velocity.x;
+    player.pos.y += player.velocity.y;
+
+    // Ajustar la posición y rotación del jugador basada en las teclas de dirección
+    if window.is_key_down(Key::A) {
         player.a -= ROTATION_SPEED;
     }
-    if window.is_key_down(Key::Right) {
+    if window.is_key_down(Key::D) {
         player.a += ROTATION_SPEED;
     }
 
-    if window.is_key_down(Key::Up) {
-        player.pos.x = player.pos.x + MOVE_SPEED * player.a.cos();
-        player.pos.y = player.pos.y + MOVE_SPEED * player.a.sin();
+    let mut new_pos = player.pos;
+
+    if window.is_key_down(Key::W) {
+        new_pos.x += MOVE_SPEED * player.a.cos();
+        new_pos.y += MOVE_SPEED * player.a.sin();
     }
-    
-    if window.is_key_down(Key::Down) {
-        player.pos.x = player.pos.x - MOVE_SPEED * player.a.cos();
-        player.pos.y = player.pos.y - MOVE_SPEED * player.a.sin();
+
+    if window.is_key_down(Key::S) {
+        new_pos.x -= MOVE_SPEED * player.a.cos();
+        new_pos.y -= MOVE_SPEED * player.a.sin();
     }
-    
+
+    // Verificar si el jugador puede moverse a la nueva posición
+    if player.can_move_to(new_pos, maze, block_size) {
+        player.pos = new_pos;
+    }
 }
