@@ -82,8 +82,10 @@ fn render3d(framebuffer: &mut Framebuffer, player: &Player, z_buffer: &mut [f32]
         let Intersect = cast_ray(framebuffer, &maze, player, a, block_size, false);
         
         let distance = Intersect.distance * (a - player.a).cos();
-        let stake_height = (framebuffer.height as f32 / distance) * 70.0;
-        
+        let mut stake_height = (framebuffer.height as f32 / distance) * 70.0;
+        if stake_height > framebuffer.height as f32 {
+             stake_height = framebuffer.height as f32;
+            }
         let stake_top = (hh - (stake_height / 2.0)) as usize;
         let stake_bottom = (hh + (stake_height / 2.0)) as usize;
 
@@ -223,8 +225,12 @@ fn main() {
     
 
     
-    let audio_player = AudioPlayer::new("assets/music.mp3", "assets/steps.mp3");
+   let audio_player = AudioPlayer::new("assets/music.mp3").expect("Failed to initialize AudioPlayer");
+   audio_player.play();
 
+    
+    let steps_player = AudioPlayer::new("assets/steps.mp3").expect("Failed to initialize AudioPlayer");
+    
     
     
 
@@ -379,7 +385,7 @@ fn main() {
             
         }
         
-        process_events(&window, &mut player, &maze, block_size, &audio_player); 
+        process_events(&window, &mut player, &maze, block_size, &steps_player); 
 
         framebuffer.clear();
         if mode == "2D"{

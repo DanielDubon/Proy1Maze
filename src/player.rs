@@ -29,8 +29,8 @@ impl Player {
 }
 
 pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], block_size: usize, audio_player: &AudioPlayer) {
-    const MOVE_SPEED: f32 = 6.0;
-    const ROTATION_SPEED: f32 = 3.14 / 40.0;
+    const MOVE_SPEED: f32 = 2.0;
+    const ROTATION_SPEED: f32 = 3.14 / 80.0;
 
     let mut moved = false;
 
@@ -48,26 +48,37 @@ pub fn process_events(window: &Window, player: &mut Player, maze: &[Vec<char>], 
 
     if window.is_key_down(Key::A) {
         player.a -= ROTATION_SPEED;
+       
     }
     if window.is_key_down(Key::D) {
         player.a += ROTATION_SPEED;
+     
     }
     if window.is_key_down(Key::W) {
         new_pos.x += MOVE_SPEED * player.a.cos();
         new_pos.y += MOVE_SPEED * player.a.sin();
         moved = true;
+       
     }
     if window.is_key_down(Key::S) {
         new_pos.x -= MOVE_SPEED * player.a.cos();
         new_pos.y -= MOVE_SPEED * player.a.sin();
         moved = true;
+      
     }
-
+    if window.is_key_down(Key::P) {
+        
+    }
     // Verificar si el jugador puede moverse a la nueva posición
     if moved && player.can_move_to(new_pos, maze, block_size) {
         if player.pos != new_pos { // Asegurarse de que hay un movimiento real
             player.pos = new_pos;
-            audio_player.play_step_sound(); // Reproducir el sonido de pasos solo si se ha movido
+            // Reproducir el sonido de pasos solo si se ha movido
         }
+        audio_player.play(); 
+        
+    }else{
+        audio_player.pause();
     }
+    
 }
